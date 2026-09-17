@@ -285,6 +285,7 @@ export default function App() {
           />
         ) : (
           <Catalog
+            onAdd={add}
             restaurants={restaurants}
             query={query}
             setQuery={setQuery}

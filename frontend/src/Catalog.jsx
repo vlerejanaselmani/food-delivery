@@ -40,7 +40,12 @@ export default function Catalog({
   isFavorite,
   query,
   setQuery,
+  onAdd,
 }) {
+  const [category, setCategory] = useState("");
+  const categories = [
+    ...new Set(restaurants.flatMap((r) => r.foods.map((f) => f.category))),
+  ].sort();
   const [cuisine, setCuisine] = useState("All"),
     [sort, setSort] = useState("recommended");
   const filtered = restaurants
@@ -58,6 +63,17 @@ export default function Catalog({
           ? a.delivery_fee_cents - b.delivery_fee_cents
           : a.id - b.id,
     );
+  const matchingFoods = filtered.flatMap((restaurant) =>
+    restaurant.foods
+      .filter(
+        (food) =>
+          food.category === category &&
+          `${restaurant.name} ${restaurant.cuisine} ${food.name}`
+            .toLowerCase()
+            .includes(query.toLowerCase()),
+      )
+      .map((food) => ({ food, restaurant })),
+  );
   return (
     <>
       <section className="hero">
@@ -151,10 +167,29 @@ export default function Catalog({
             />
           </label>
         </div>
+        <label className="food-category-filter">
+          Food category
+          <select
+            aria-label="Filter foods by category"
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+          >
+            <option value="">All categories</option>
+            {categories.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="results-heading">
           <h3>
-            {query ? `Results for “${query}”` : "Restaurants you’ll love"}{" "}
-            <span>{filtered.length}</span>
+            {category
+              ? `${category} dishes`
+              : query
+                ? `Results for “${query}”`
+                : "Restaurants you’ll love"}{" "}
+            <span>{category ? matchingFoods.length : filtered.length}</span>
           </h3>
           <label className="sort-label">
             <SlidersHorizontal size={15} />
@@ -169,68 +204,85 @@ export default function Catalog({
             </select>
           </label>
         </div>
-        <div className="restaurant-grid">
-          {filtered.map((r) => (
-            <article className="restaurant-card" key={r.id}>
-              <div className="restaurant-photo">
-                <button
-                  className="photo-button"
-                  onClick={() => onSelect(r)}
-                  aria-label={`View ${r.name} menu`}
-                >
-                  <img
-                    src={r.image_url}
-                    alt={`${r.cuisine} food from ${r.name}`}
-                  />
-                </button>
-                <span className="photo-tag">
-                  {r.cuisine === "Italian"
-                    ? "A taste of Italy"
-                    : r.cuisine === "Burgers"
-                      ? "Big bite energy"
-                      : "Fresh off the grill"}
-                </span>
-                <FavoriteButton
-                  label={`Favorite ${r.name}`}
-                  active={isFavorite("restaurants", r.id)}
-                  onClick={() => onFavorite("restaurants", r.id)}
-                />
-              </div>
-              <div className="restaurant-info">
-                <div className="restaurant-title">
-                  <button onClick={() => onSelect(r)}>
-                    <h3>{r.name}</h3>
+        {category ? (
+          <div className="food-grid">
+            {matchingFoods.map(({ food, restaurant }) => (
+              <FoodCard
+                key={food.id}
+                food={food}
+                restaurant={restaurant}
+                onAdd={onAdd}
+                onSelect={onSelect}
+                onFavorite={onFavorite}
+                isFavorite={isFavorite}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="restaurant-grid">
+            {filtered.map((r) => (
+              <article className="restaurant-card" key={r.id}>
+                <div className="restaurant-photo">
+                  <button
+                    className="photo-button"
+                    onClick={() => onSelect(r)}
+                    aria-label={`View ${r.name} menu`}
+                  >
+                    <img
+                      src={r.image_url}
+                      alt={`${r.cuisine} food from ${r.name}`}
+                    />
                   </button>
-                  <ArrowUpRight size={21} />
-                </div>
-                <p>
-                  {r.cuisine} <span>·</span> {r.foods.length} delicious
-                  possibilities
-                </p>
-                <div className="restaurant-meta">
-                  <span>
-                    <Clock3 size={15} />
-                    {r.delivery_minutes}–{r.delivery_minutes + 10} min
+                  <span className="photo-tag">
+                    {r.cuisine === "Italian"
+                      ? "A taste of Italy"
+                      : r.cuisine === "Burgers"
+                        ? "Big bite energy"
+                        : "Fresh off the grill"}
                   </span>
-                  <span>
-                    <Bike size={16} />
-                    {money(r.delivery_fee_cents)} delivery
-                  </span>
+                  <FavoriteButton
+                    label={`Favorite ${r.name}`}
+                    active={isFavorite("restaurants", r.id)}
+                    onClick={() => onFavorite("restaurants", r.id)}
+                  />
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
-        {!filtered.length && (
+                <div className="restaurant-info">
+                  <div className="restaurant-title">
+                    <button onClick={() => onSelect(r)}>
+                      <h3>{r.name}</h3>
+                    </button>
+                    <ArrowUpRight size={21} />
+                  </div>
+                  <p>
+                    {r.cuisine} <span>·</span> {r.foods.length} delicious
+                    possibilities
+                  </p>
+                  <div className="restaurant-meta">
+                    <span>
+                      <Clock3 size={15} />
+                      {r.delivery_minutes}–{r.delivery_minutes + 10} min
+                    </span>
+                    <span>
+                      <Bike size={16} />
+                      {money(r.delivery_fee_cents)} delivery
+                    </span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+        {!(category ? matchingFoods.length : filtered.length) && (
           <div className="empty">
             <Search />
             <h3>No bites found</h3>
-            <p>Try another dish or explore a different cuisine.</p>
+            <p>Try another dish, category, or cuisine.</p>
             <button
               className="secondary"
               onClick={() => {
                 setQuery("");
                 setCuisine("All");
+                setCategory("");
               }}
             >
               Show all restaurants
@@ -315,10 +367,11 @@ export function RestaurantMenu({
         </div>
         <img src={restaurant.image_url} alt={restaurant.cuisine} />
       </div>
-      <div className="category-tabs">
+      <div className="category-tabs" role="group" aria-label="Food categories">
         {categories.map((c) => (
           <button
             key={c}
+            aria-pressed={category === c}
             className={category === c ? "active" : ""}
             onClick={() => setCategory(c)}
           >
@@ -330,34 +383,59 @@ export function RestaurantMenu({
         {restaurant.foods
           .filter((f) => category === "All" || f.category === category)
           .map((f) => (
-            <article className="food-card" key={f.id}>
-              <div className="food-photo">
-                <img src={f.image_url} alt={f.name} />
-                <FavoriteButton
-                  active={isFavorite("foods", f.id)}
-                  label={`Favorite ${f.name}`}
-                  onClick={() => onFavorite("foods", f.id)}
-                />
-              </div>
-              <div className="food-copy">
-                <span className="eyebrow">{f.category}</span>
-                <h3>{f.name}</h3>
-                <p>{f.description}</p>
-                <div className="food-bottom">
-                  <strong>{money(f.price_cents)}</strong>
-                  <button
-                    className="add-button"
-                    onClick={() => onAdd(f, restaurant)}
-                    aria-label={`Add ${f.name} to cart`}
-                  >
-                    <Plus size={17} />
-                    Add
-                  </button>
-                </div>
-              </div>
-            </article>
+            <FoodCard
+              key={f.id}
+              food={f}
+              restaurant={restaurant}
+              onAdd={onAdd}
+              onFavorite={onFavorite}
+              isFavorite={isFavorite}
+            />
           ))}
       </div>
     </section>
+  );
+}
+
+function FoodCard({
+  food: f,
+  restaurant,
+  onAdd,
+  onFavorite,
+  isFavorite,
+  onSelect,
+}) {
+  return (
+    <article className="food-card">
+      <div className="food-photo">
+        <img src={f.image_url} alt={f.name} />
+        <FavoriteButton
+          active={isFavorite("foods", f.id)}
+          label={`Favorite ${f.name}`}
+          onClick={() => onFavorite("foods", f.id)}
+        />
+      </div>
+      <div className="food-copy">
+        <span className="eyebrow">{f.category}</span>
+        <h3>{f.name}</h3>
+        {onSelect && (
+          <button className="text-button" onClick={() => onSelect(restaurant)}>
+            {restaurant.name}
+          </button>
+        )}
+        <p>{f.description}</p>
+        <div className="food-bottom">
+          <strong>{money(f.price_cents)}</strong>
+          <button
+            className="add-button"
+            onClick={() => onAdd(f, restaurant)}
+            aria-label={`Add ${f.name} to cart`}
+          >
+            <Plus size={17} />
+            Add
+          </button>
+        </div>
+      </div>
+    </article>
   );
 }
