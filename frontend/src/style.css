@@ -2018,3 +2018,22 @@ p {
   border-radius: 8px;
   object-fit: cover;
 }
+
+.food-category-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 24px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.food-category-filter select {
+  background: white;
+  color: inherit;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font: inherit;
+  max-width: 100%;
+}
