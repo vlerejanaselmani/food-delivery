@@ -12,7 +12,8 @@ import { api } from "./api";
 vi.mock("./api", () => ({ api: vi.fn() }));
 afterEach(() => {
   cleanup();
-  vi.clearAllMocks();
+  vi.resetAllMocks();
+  vi.unstubAllGlobals();
 });
 const restaurant = {
   id: 1,
@@ -110,4 +111,69 @@ test("uploads the selected photo before saving the food image URL", async () => 
   )[1];
   expect(upload.body.get("image")).toBe(file);
   vi.unstubAllGlobals();
+});
+
+test("creates an admin from the panel and displays confirmation", async () => {
+  api.mockImplementation(async (path) =>
+    path === "admin/admins"
+      ? { user: { email: "team@example.com" } }
+      : { data: [], meta: { last_page: 1 } },
+  );
+  render(<Admin onBack={vi.fn()} onCatalogChange={vi.fn()} />);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Create admin", exact: true }),
+  );
+  fireEvent.change(screen.getByLabelText("Name"), {
+    target: { value: "Team Admin" },
+  });
+  fireEvent.change(screen.getByLabelText("Email address"), {
+    target: { value: "team@example.com" },
+  });
+  fireEvent.change(screen.getByLabelText("Password"), {
+    target: { value: "team-secret" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Create admin account" }));
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "Admin account created for team@example.com",
+  );
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(api).toHaveBeenCalledWith("admin/admins", {
+    method: "POST",
+    body: {
+      name: "Team Admin",
+      email: "team@example.com",
+      password: "team-secret",
+    },
+  });
+});
+
+test("keeps the create admin form open when the server rejects the email", async () => {
+  api.mockImplementation(async (path) => {
+    if (path === "admin/admins")
+      throw new Error("The email has already been taken.");
+    return { data: [], meta: { last_page: 1 } };
+  });
+  render(<Admin onBack={vi.fn()} onCatalogChange={vi.fn()} />);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Create admin", exact: true }),
+  );
+  fireEvent.change(screen.getByLabelText("Name"), {
+    target: { value: "Team Admin" },
+  });
+  fireEvent.change(screen.getByLabelText("Email address"), {
+    target: { value: "team@example.com" },
+  });
+  fireEvent.change(screen.getByLabelText("Password"), {
+    target: { value: "team-secret" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Create admin account" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "The email has already been taken.",
+  );
+  expect(
+    screen.getByRole("button", { name: "Create admin account" }),
+  ).toBeEnabled();
+  expect(screen.getByLabelText("Name")).toHaveValue("Team Admin");
+  fireEvent.click(screen.getByRole("button", { name: "Close create admin" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });

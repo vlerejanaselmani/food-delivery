@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\FoodController;
 use App\Http\Controllers\Admin\FoodImageController;
 use App\Http\Controllers\AuthController;
@@ -24,6 +25,7 @@ Route::prefix('api/v1')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:20,1');
     Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('admin')->middleware('admin')->group(function () {
+            Route::post('admins', [AdminController::class, 'store']);
             Route::post('food-images', [FoodImageController::class, 'store']);
             Route::apiResource('restaurants', App\Http\Controllers\Admin\RestaurantController::class)->except(['show']);
             Route::apiResource('foods', FoodController::class)->only(['store', 'update', 'destroy']);
