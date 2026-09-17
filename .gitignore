@@ -1,0 +1,7 @@
+.local/
+**/node_modules/
+**/vendor/
+**/dist/
+**/.env
+**/.env.testing
+**/.DS_Store

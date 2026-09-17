@@ -1,0 +1,1 @@
+import React from 'react'; import {createRoot} from 'react-dom/client'; import './style.css'; createRoot(document.getElementById('root')).render(<main><h1>shija<span>.</span></h1><p>A little joy, delivered.</p></main>);
