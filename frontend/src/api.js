@@ -1,5 +1,6 @@
 export async function api(path, options = {}) {
   const method = options.method || "GET";
+  const isForm = options.body instanceof FormData;
   if (method !== "GET")
     await fetch("/sanctum/csrf-cookie", { credentials: "include" });
   const token = document.cookie
@@ -11,11 +12,15 @@ export async function api(path, options = {}) {
     credentials: "include",
     headers: {
       Accept: "application/json",
-      "Content-Type": "application/json",
+      ...(!isForm ? { "Content-Type": "application/json" } : {}),
       ...(token ? { "X-XSRF-TOKEN": decodeURIComponent(token) } : {}),
       ...options.headers,
     },
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body: isForm
+      ? options.body
+      : options.body
+        ? JSON.stringify(options.body)
+        : undefined,
   });
   const data = response.status === 204 ? {} : await response.json();
   if (!response.ok) {
