@@ -1,0 +1,14 @@
+{
+  "name": "shija",
+  "private": true,
+  "scripts": {
+    "dev": "bash scripts/dev.sh",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && php artisan test --compact",
+    "test:frontend": "npm --prefix frontend test",
+    "build": "npm --prefix frontend run build",
+    "format": "npm --prefix frontend run format",
+    "db:start": "bash scripts/mysql.sh start",
+    "db:stop": "bash scripts/mysql.sh stop"
+  }
+}

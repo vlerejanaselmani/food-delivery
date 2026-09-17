@@ -1,12 +1,234 @@
-import {useEffect,useState} from 'react';
-import {Heart,ShoppingBag,ArrowLeft,RefreshCw} from 'lucide-react';
-import {api} from './api';
-import {money} from './Catalog';
-export function Orders({onBack}){
- const [orders,setOrders]=useState([]),[error,setError]=useState(''),[loading,setLoading]=useState(true),[page,setPage]=useState(1),[lastPage,setLastPage]=useState(1);
- async function load(p=page){setLoading(true);setError('');try{const r=await api(`orders?page=${p}`);setOrders(r.data);setPage(p);setLastPage(r.meta.last_page)}catch(e){setError(e.message)}finally{setLoading(false)}}
- useEffect(()=>{load(1)},[]);
- return <section className="account-page"><button className="text-button back" onClick={onBack}><ArrowLeft size={16}/>Back to the good stuff</button><div className="page-heading"><div><p className="eyebrow">YOUR DELICIOUS MEMORIES</p><h1>My orders<span>.</span></h1></div><button className="secondary" onClick={()=>load()} disabled={loading}><RefreshCw size={15}/>Refresh</button></div>{error&&<p className="error" role="alert">{error}</p>}{loading?<div className="empty">Finding your orders…</div>:!orders.length?<div className="empty"><ShoppingBag/><h3>Your first favorite meal is waiting.</h3><p>Orders you place while signed in will appear here.</p><button className="primary" onClick={onBack}>Explore restaurants</button></div>:<div className="order-list">{orders.map(order=><OrderCard key={order.id} order={order}/>)}</div>}<div className="pagination">{page>1&&<button className="secondary" onClick={()=>load(page-1)}>Previous</button>}{page<lastPage&&<button className="secondary" onClick={()=>load(page+1)}>Next</button>}</div></section>
+import { useEffect, useState } from "react";
+import { Heart, ShoppingBag, ArrowLeft, RefreshCw } from "lucide-react";
+import { api } from "./api";
+import { money } from "./Catalog";
+export function Orders({ onBack }) {
+  const [orders, setOrders] = useState([]),
+    [error, setError] = useState(""),
+    [loading, setLoading] = useState(true),
+    [page, setPage] = useState(1),
+    [lastPage, setLastPage] = useState(1);
+  async function load(p = page) {
+    setLoading(true);
+    setError("");
+    try {
+      const r = await api(`orders?page=${p}`);
+      setOrders(r.data);
+      setPage(p);
+      setLastPage(r.meta.last_page);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    load(1);
+  }, []);
+  return (
+    <section className="account-page">
+      <button className="text-button back" onClick={onBack}>
+        <ArrowLeft size={16} />
+        Back to the good stuff
+      </button>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">YOUR DELICIOUS MEMORIES</p>
+          <h1>
+            My orders<span>.</span>
+          </h1>
+        </div>
+        <button className="secondary" onClick={() => load()} disabled={loading}>
+          <RefreshCw size={15} />
+          Refresh
+        </button>
+      </div>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      {loading ? (
+        <div className="empty">Finding your orders…</div>
+      ) : !orders.length ? (
+        <div className="empty">
+          <ShoppingBag />
+          <h3>Your first favorite meal is waiting.</h3>
+          <p>Orders you place while signed in will appear here.</p>
+          <button className="primary" onClick={onBack}>
+            Explore restaurants
+          </button>
+        </div>
+      ) : (
+        <div className="order-list">
+          {orders.map((order) => (
+            <OrderCard key={order.id} order={order} />
+          ))}
+        </div>
+      )}
+      <div className="pagination">
+        {page > 1 && (
+          <button className="secondary" onClick={() => load(page - 1)}>
+            Previous
+          </button>
+        )}
+        {page < lastPage && (
+          <button className="secondary" onClick={() => load(page + 1)}>
+            Next
+          </button>
+        )}
+      </div>
+    </section>
+  );
 }
-export function OrderCard({order,children}){const steps=['new','processing','on the way','done'];return <article className="order-card"><div className="order-card-heading"><div><p className="eyebrow">#{order.reference.slice(0,8).toUpperCase()} · {new Date(order.created_at).toLocaleDateString('en-GB')}</p><h3>{order.restaurant_name}</h3></div><span className={`status status-${order.status.replaceAll(' ','-')}`}>{order.status}</span></div><div className="order-lines">{order.items.map(i=><p key={i.id}><span>{i.quantity} × {i.name}</span><strong>{money(i.price_cents*i.quantity)}</strong></p>)}</div><div className="order-detail"><span>{order.city} · {order.phone}</span><strong>Total {money(order.total_cents)}</strong></div><div className="order-progress">{steps.map((s,i)=><div key={s} className={i<=steps.indexOf(order.status)?'complete':''}><span/>{s}</div>)}</div>{children}</article>}
-export function Favorites({favorites,restaurants,onSelect,onAdd,onFavorite,onBack}){return <section className="account-page"><button className="text-button back" onClick={onBack}><ArrowLeft size={16}/>Back to exploring</button><div className="page-heading"><div><p className="eyebrow">THE ONES YOU KEEP COMING BACK TO</p><h1>My favorites<span>.</span></h1></div><Heart color="#e63527"/></div>{!favorites.foods.length&&!favorites.restaurants.length?<div className="empty"><Heart/><h3>Good taste deserves a little heart.</h3><p>Tap the heart on any food or restaurant to save it here.</p><button className="primary" onClick={onBack}>Find your favorites</button></div>:<>{favorites.restaurants.length>0&&<><h2 className="subheading">Favorite kitchens</h2><div className="favorite-grid">{favorites.restaurants.map(r=><article className="favorite-row" key={r.id}><img src={r.image_url} alt={r.name}/><div><h3>{r.name}</h3><p>{r.cuisine}</p><button className="text-button" onClick={()=>onSelect(restaurants.find(x=>x.id===r.id))}>Explore menu →</button></div><button className="icon" aria-label={`Remove favorite ${r.name}`} onClick={()=>onFavorite('restaurants',r.id)}><Heart size={19} fill="#e63527" color="#e63527"/></button></article>)}</div></>}{favorites.foods.length>0&&<><h2 className="subheading">Your favorite bites</h2><div className="favorite-grid">{favorites.foods.map(f=><article className="favorite-row" key={f.id}><img src={f.image_url} alt={f.name}/><div><h3>{f.name}</h3><p>{money(f.price_cents)}</p><button className="text-button" onClick={()=>onAdd(f,restaurants.find(r=>r.id===f.restaurant_id))}>Add to bag +</button></div><button className="icon" aria-label={`Remove favorite ${f.name}`} onClick={()=>onFavorite('foods',f.id)}><Heart size={19} fill="#e63527" color="#e63527"/></button></article>)}</div></>}</>}</section>}
+export function OrderCard({ order, children }) {
+  const steps = ["new", "processing", "on the way", "done"];
+  return (
+    <article className="order-card">
+      <div className="order-card-heading">
+        <div>
+          <p className="eyebrow">
+            #{order.reference.slice(0, 8).toUpperCase()} ·{" "}
+            {new Date(order.created_at).toLocaleDateString("en-GB")}
+          </p>
+          <h3>{order.restaurant_name}</h3>
+        </div>
+        <span className={`status status-${order.status.replaceAll(" ", "-")}`}>
+          {order.status}
+        </span>
+      </div>
+      <div className="order-lines">
+        {order.items.map((i) => (
+          <p key={i.id}>
+            <span>
+              {i.quantity} × {i.name}
+            </span>
+            <strong>{money(i.price_cents * i.quantity)}</strong>
+          </p>
+        ))}
+      </div>
+      <div className="order-detail">
+        <span>
+          {order.city} · {order.phone}
+        </span>
+        <strong>Total {money(order.total_cents)}</strong>
+      </div>
+      <div className="order-progress">
+        {steps.map((s, i) => (
+          <div
+            key={s}
+            className={i <= steps.indexOf(order.status) ? "complete" : ""}
+          >
+            <span />
+            {s}
+          </div>
+        ))}
+      </div>
+      {children}
+    </article>
+  );
+}
+export function Favorites({
+  favorites,
+  restaurants,
+  onSelect,
+  onAdd,
+  onFavorite,
+  onBack,
+}) {
+  return (
+    <section className="account-page">
+      <button className="text-button back" onClick={onBack}>
+        <ArrowLeft size={16} />
+        Back to exploring
+      </button>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">THE ONES YOU KEEP COMING BACK TO</p>
+          <h1>
+            My favorites<span>.</span>
+          </h1>
+        </div>
+        <Heart color="#e63527" />
+      </div>
+      {!favorites.foods.length && !favorites.restaurants.length ? (
+        <div className="empty">
+          <Heart />
+          <h3>Good taste deserves a little heart.</h3>
+          <p>Tap the heart on any food or restaurant to save it here.</p>
+          <button className="primary" onClick={onBack}>
+            Find your favorites
+          </button>
+        </div>
+      ) : (
+        <>
+          {favorites.restaurants.length > 0 && (
+            <>
+              <h2 className="subheading">Favorite kitchens</h2>
+              <div className="favorite-grid">
+                {favorites.restaurants.map((r) => (
+                  <article className="favorite-row" key={r.id}>
+                    <img src={r.image_url} alt={r.name} />
+                    <div>
+                      <h3>{r.name}</h3>
+                      <p>{r.cuisine}</p>
+                      <button
+                        className="text-button"
+                        onClick={() =>
+                          onSelect(restaurants.find((x) => x.id === r.id))
+                        }
+                      >
+                        Explore menu →
+                      </button>
+                    </div>
+                    <button
+                      className="icon"
+                      aria-label={`Remove favorite ${r.name}`}
+                      onClick={() => onFavorite("restaurants", r.id)}
+                    >
+                      <Heart size={19} fill="#e63527" color="#e63527" />
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
+          {favorites.foods.length > 0 && (
+            <>
+              <h2 className="subheading">Your favorite bites</h2>
+              <div className="favorite-grid">
+                {favorites.foods.map((f) => (
+                  <article className="favorite-row" key={f.id}>
+                    <img src={f.image_url} alt={f.name} />
+                    <div>
+                      <h3>{f.name}</h3>
+                      <p>{money(f.price_cents)}</p>
+                      <button
+                        className="text-button"
+                        onClick={() =>
+                          onAdd(
+                            f,
+                            restaurants.find((r) => r.id === f.restaurant_id),
+                          )
+                        }
+                      >
+                        Add to bag +
+                      </button>
+                    </div>
+                    <button
+                      className="icon"
+                      aria-label={`Remove favorite ${f.name}`}
+                      onClick={() => onFavorite("foods", f.id)}
+                    >
+                      <Heart size={19} fill="#e63527" color="#e63527" />
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </section>
+  );
+}

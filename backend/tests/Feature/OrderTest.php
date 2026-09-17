@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Food;
 use App\Models\Order;
+use App\Models\Restaurant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
@@ -66,5 +67,16 @@ class OrderTest extends TestCase
     public function test_guest_cannot_read_purchase_history(): void
     {
         $this->getJson('/api/v1/orders')->assertUnauthorized();
+    }
+
+    public function test_menu_move_between_restaurants_invalidates_mixed_cart(): void
+    {
+        $first = Food::factory()->create();
+        $second = Food::factory()->create(['restaurant_id' => $first->restaurant_id]);
+        $this->postJson('/api/v1/cart/items', ['food_id' => $first->id, 'quantity' => 1])->assertOk();
+        $key = $this->postJson('/api/v1/cart/items', ['food_id' => $second->id, 'quantity' => 1])->json('data.checkout_key');
+        $second->update(['restaurant_id' => Restaurant::factory()->create()->id]);
+        $this->postJson('/api/v1/orders', $this->checkoutData($key))->assertUnprocessable();
+        $this->assertDatabaseCount('orders', 0);
     }
 }
