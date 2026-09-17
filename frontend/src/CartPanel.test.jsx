@@ -1,11 +1,62 @@
-import React from 'react';
-import {render,screen,fireEvent,cleanup,waitFor} from '@testing-library/react';
-import {test,expect,vi,afterEach} from 'vitest';
-import CartPanel from './CartPanel';
-import {api} from './api';
-vi.mock('./api',()=>({api:vi.fn()}));
-afterEach(()=>{cleanup();vi.clearAllMocks()});
-const cart={items:[{food_id:1,name:'Margherita',price_cents:650,quantity:2,is_available:true}],restaurant:{name:'Casa'},checkout_key:'key',subtotal_cents:1300,delivery_fee_cents:150,total_cents:1450};
-const props={cart,setCart:vi.fn(),user:null,cities:['Prishtinë'],city:'Prishtinë',onClose:vi.fn(),onOrder:vi.fn(),onSignIn:vi.fn()};
-test('guest checkout collects delivery info without requiring an account',()=>{render(<CartPanel {...props}/>);fireEvent.click(screen.getByRole('button',{name:'Continue to checkout'}));expect(screen.getByLabelText('Your name')).toBeRequired();expect(screen.getByLabelText('Phone (XK)')).toBeRequired();expect(screen.getByRole('button',{name:'Place order'})).toBeEnabled();expect(screen.queryByLabelText('Password')).not.toBeInTheDocument()});
-test('quantity updates use server cart response',async()=>{api.mockResolvedValue({data:{...cart,total_cents:2100}});render(<CartPanel {...props}/>);fireEvent.click(screen.getByRole('button',{name:'Increase Margherita'}));await waitFor(()=>expect(props.setCart).toHaveBeenCalledWith({...cart,total_cents:2100}));expect(api).toHaveBeenCalledWith('cart/items/1',{method:'PATCH',body:{quantity:3}})});
+import React from "react";
+import {
+  render,
+  screen,
+  fireEvent,
+  cleanup,
+  waitFor,
+} from "@testing-library/react";
+import { test, expect, vi, afterEach } from "vitest";
+import CartPanel from "./CartPanel";
+import { api } from "./api";
+vi.mock("./api", () => ({ api: vi.fn() }));
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
+const cart = {
+  items: [
+    {
+      food_id: 1,
+      name: "Margherita",
+      price_cents: 650,
+      quantity: 2,
+      is_available: true,
+    },
+  ],
+  restaurant: { name: "Casa" },
+  checkout_key: "key",
+  subtotal_cents: 1300,
+  delivery_fee_cents: 150,
+  total_cents: 1450,
+};
+const props = {
+  cart,
+  setCart: vi.fn(),
+  user: null,
+  cities: ["Prishtinë"],
+  city: "Prishtinë",
+  onClose: vi.fn(),
+  onOrder: vi.fn(),
+  onSignIn: vi.fn(),
+};
+test("guest checkout collects delivery info without requiring an account", () => {
+  render(<CartPanel {...props} />);
+  fireEvent.click(screen.getByRole("button", { name: "Continue to checkout" }));
+  expect(screen.getByLabelText("Your name")).toBeRequired();
+  expect(screen.getByLabelText("Phone (XK)")).toBeRequired();
+  expect(screen.getByRole("button", { name: "Place order" })).toBeEnabled();
+  expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+});
+test("quantity updates use server cart response", async () => {
+  api.mockResolvedValue({ data: { ...cart, total_cents: 2100 } });
+  render(<CartPanel {...props} />);
+  fireEvent.click(screen.getByRole("button", { name: "Increase Margherita" }));
+  await waitFor(() =>
+    expect(props.setCart).toHaveBeenCalledWith({ ...cart, total_cents: 2100 }),
+  );
+  expect(api).toHaveBeenCalledWith("cart/items/1", {
+    method: "PATCH",
+    body: { quantity: 3 },
+  });
+});

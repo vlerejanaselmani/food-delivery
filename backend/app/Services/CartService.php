@@ -26,7 +26,7 @@ class CartService
             $request->session()->put('checkout_key', (string) Str::uuid());
         }
 
-        return ['items' => $items, 'restaurant' => $restaurant, 'checkout_key' => $request->session()->get('checkout_key'), 'missing_items' => count($cart) !== count($items), ...OrderTotal::calculate($items, $restaurant?->delivery_fee_cents ?? 0)];
+        return ['items' => $items, 'restaurant' => $restaurant, 'checkout_key' => $request->session()->get('checkout_key'), 'missing_items' => count($cart) !== count($items) || $foods->pluck('restaurant_id')->unique()->count() > 1, ...OrderTotal::calculate($items, $restaurant?->delivery_fee_cents ?? 0)];
     }
 
     public function clear(Request $request): void
