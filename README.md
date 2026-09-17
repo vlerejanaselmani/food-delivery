@@ -73,7 +73,7 @@ Delivery address is a city/municipality selection, as requested: all 38 municipa
 
 ## Milestones
 
-Branches are cumulative and remain separate for review; no merge to main was assumed.
+All four cumulative milestones are merged into `main`. The milestone branches remain available as development checkpoints.
 
 1. `milestone/01-foundation-auth` — structure, dependencies, MySQL setup, Sanctum authentication
 2. `milestone/02-restaurants-menu` — three seeded restaurants, 18 items, public API, storefront
