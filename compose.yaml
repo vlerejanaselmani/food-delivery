@@ -1,0 +1,75 @@
+name: shija
+
+x-app-environment: &app-environment
+  APP_NAME: Shija
+  APP_ENV: local
+  APP_DEBUG: "false"
+  APP_URL: http://localhost:8080
+  LOG_CHANNEL: stderr
+  DB_CONNECTION: mysql
+  DB_HOST: db
+  DB_PORT: 3306
+  DB_DATABASE: food_delivery
+  DB_USERNAME: food_app
+  DB_PASSWORD: shija_local_db
+  SESSION_DRIVER: database
+  SESSION_DOMAIN: "null"
+  SESSION_SECURE_COOKIE: "false"
+  CACHE_STORE: database
+  ADMIN_EMAIL: admin@shija.test
+  ADMIN_PASSWORD: ShijaDemo2026!
+
+services:
+  app:
+    build:
+      context: .
+      target: app
+    ports:
+      - "127.0.0.1:8080:80"
+    environment: *app-environment
+    volumes:
+      - app_storage:/var/www/html/storage
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1/up') === false ? 1 : 0);"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: food_delivery
+      MYSQL_USER: food_app
+      MYSQL_PASSWORD: shija_local_db
+      MYSQL_ROOT_PASSWORD: shija_local_root
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql-init.sql:/docker-entrypoint-initdb.d/01-test-database.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u $$MYSQL_USER -D $$MYSQL_DATABASE -e 'SELECT 1' >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  tests:
+    profiles: ["test"]
+    build:
+      context: .
+      target: test
+    environment:
+      <<: *app-environment
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_DATABASE: food_delivery_test
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
+  app_storage:

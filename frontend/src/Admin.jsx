@@ -350,6 +350,17 @@ function Editor({ edit, restaurants, onClose, onSaved }) {
   const restaurant = type === "restaurants";
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const [photo, setPhoto] = useState(null);
+  const [preview, setPreview] = useState("");
+  useEffect(() => {
+    if (!photo) {
+      setPreview("");
+      return;
+    }
+    const url = URL.createObjectURL(photo);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photo]);
   async function save(e) {
     e.preventDefault();
     setBusy(true);
@@ -368,6 +379,15 @@ function Editor({ edit, restaurants, onClose, onSaved }) {
       body.is_available = form.has("is_available");
     }
     try {
+      if (photo && !restaurant) {
+        const upload = new FormData();
+        upload.append("image", photo);
+        const result = await api("admin/food-images", {
+          method: "POST",
+          body: upload,
+        });
+        body.image_url = result.image_url;
+      }
       await api(`admin/${type}${item.id ? `/${item.id}` : ""}`, {
         method: item.id ? "PATCH" : "POST",
         body,
@@ -492,6 +512,40 @@ function Editor({ edit, restaurants, onClose, onSaved }) {
               )}
             </select>
           </label>
+          {!restaurant && (
+            <div className="photo-upload">
+              <label>
+                Upload a photo
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={busy}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (file && file.size > 5 * 1024 * 1024) {
+                      setError("Choose a photo smaller than 5 MB.");
+                      e.target.value = "";
+                      setPhoto(null);
+                      return;
+                    }
+                    setError("");
+                    setPhoto(file);
+                  }}
+                />
+              </label>
+              <p className="muted">
+                JPEG, PNG, or WebP · up to 5 MB. Uploading replaces the selected
+                image when saved.
+              </p>
+              {(preview || item.image_url) && (
+                <img
+                  className="upload-preview"
+                  src={preview || item.image_url}
+                  alt="Food photo preview"
+                />
+              )}
+            </div>
+          )}
           {restaurant ? (
             <div className="form-row">
               <label>

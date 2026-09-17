@@ -66,3 +66,48 @@ test("admin food editing converts euro prices to integer cents", async () => {
     ),
   );
 });
+
+test("uploads the selected photo before saving the food image URL", async () => {
+  vi.stubGlobal("URL", {
+    createObjectURL: () => "blob:meal-preview",
+    revokeObjectURL: vi.fn(),
+  });
+  api.mockImplementation(async (path) =>
+    path === "admin/restaurants"
+      ? { data: [restaurant] }
+      : path.startsWith("admin/orders")
+        ? { data: [], meta: { last_page: 1 } }
+        : path === "admin/food-images"
+          ? { image_url: "/storage/food-images/uploaded.png" }
+          : { data: {} },
+  );
+  render(<Admin onBack={vi.fn()} onCatalogChange={vi.fn()} />);
+  fireEvent.click(screen.getByRole("button", { name: "Restaurants & menus" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Edit Margherita" }),
+  );
+  const file = new File(["photo"], "meal.png", { type: "image/png" });
+  fireEvent.change(screen.getByLabelText("Upload a photo"), {
+    target: { files: [file] },
+  });
+  expect(await screen.findByAltText("Food photo preview")).toHaveAttribute(
+    "src",
+    "blob:meal-preview",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  await waitFor(() =>
+    expect(api).toHaveBeenCalledWith(
+      "admin/foods/1",
+      expect.objectContaining({
+        body: expect.objectContaining({
+          image_url: "/storage/food-images/uploaded.png",
+        }),
+      }),
+    ),
+  );
+  const upload = api.mock.calls.find(
+    ([path]) => path === "admin/food-images",
+  )[1];
+  expect(upload.body.get("image")).toBe(file);
+  vi.unstubAllGlobals();
+});
