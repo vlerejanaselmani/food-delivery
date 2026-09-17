@@ -14,7 +14,7 @@ class AuthController extends Controller
     public function register(RegisterRequest $request): JsonResponse
     {
         $user = User::create($request->validated());
-        Auth::login($user);
+        Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
         return response()->json(['user' => $user->fresh()], 201);
@@ -24,7 +24,7 @@ class AuthController extends Controller
     {
         $data = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
         $data['email'] = strtolower($data['email']);
-        if (! Auth::attempt($data)) {
+        if (! Auth::guard('web')->attempt($data)) {
             throw ValidationException::withMessages(['email' => 'These credentials do not match our records.']);
         }
         $request->session()->regenerate();
