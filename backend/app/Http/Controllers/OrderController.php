@@ -6,6 +6,7 @@ use App\Http\Requests\CheckoutRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Services\CartService;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
@@ -44,7 +45,14 @@ class OrderController extends Controller
                     throw ValidationException::withMessages(['cart' => $item['name'].' is no longer available. Remove it to continue.']);
                 }
             }
-            $order = Order::create([...$data, 'reference' => (string) Str::uuid(), 'user_id' => $request->user()?->id, 'restaurant_id' => $cart['restaurant']->id, 'restaurant_name' => $cart['restaurant']->name, 'status' => 'new', 'subtotal_cents' => $cart['subtotal_cents'], 'delivery_fee_cents' => $cart['delivery_fee_cents'], 'total_cents' => $cart['total_cents']]);
+            if ($data['price_quote'] !== $cart['price_quote']) {
+                throw new HttpResponseException(response()->json([
+                    'message' => 'Prices or delivery fees have changed. Review the updated total and confirm again.',
+                    'code' => 'cart_price_changed',
+                    'data' => $cart,
+                ], 409));
+            }
+            $order = Order::create([...$request->safe()->except('price_quote'), 'reference' => (string) Str::uuid(), 'user_id' => $request->user()?->id, 'restaurant_id' => $cart['restaurant']->id, 'restaurant_name' => $cart['restaurant']->name, 'status' => 'new', 'subtotal_cents' => $cart['subtotal_cents'], 'delivery_fee_cents' => $cart['delivery_fee_cents'], 'total_cents' => $cart['total_cents']]);
             foreach ($cart['items'] as $item) {
                 $order->items()->create(collect($item)->only(['food_id', 'name', 'price_cents', 'quantity'])->all());
             }

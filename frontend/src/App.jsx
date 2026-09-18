@@ -45,6 +45,19 @@ export default function App() {
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true),
     [notice, setNotice] = useState("");
+  useEffect(() => {
+    function expireSession() {
+      setUser(null);
+      setFavorites({ foods: [], restaurants: [] });
+      if (user)
+        setNotice(
+          "Your session expired. Sign in again to access your account.",
+        );
+    }
+    window.addEventListener("shija:session-expired", expireSession);
+    return () =>
+      window.removeEventListener("shija:session-expired", expireSession);
+  }, [user]);
   async function loadFavorites() {
     try {
       setFavorites(await api("favorites"));

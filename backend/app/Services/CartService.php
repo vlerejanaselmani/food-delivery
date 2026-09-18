@@ -12,7 +12,11 @@ class CartService
     public function read(Request $request, bool $lock = false): array
     {
         $cart = $request->session()->get('cart', []);
-        $query = Food::with('restaurant')->whereIn('id', array_keys($cart));
+        $query = Food::with(['restaurant' => function ($query) use ($lock) {
+            if ($lock) {
+                $query->lockForUpdate();
+            }
+        }])->whereIn('id', array_keys($cart))->orderBy('id');
         if ($lock) {
             $query->lockForUpdate();
         }
@@ -26,7 +30,13 @@ class CartService
             $request->session()->put('checkout_key', (string) Str::uuid());
         }
 
-        return ['items' => $items, 'restaurant' => $restaurant, 'checkout_key' => $request->session()->get('checkout_key'), 'missing_items' => count($cart) !== count($items) || $foods->pluck('restaurant_id')->unique()->count() > 1, ...OrderTotal::calculate($items, $restaurant?->delivery_fee_cents ?? 0)];
+        $pricing = [
+            'items' => array_map(fn (array $item): array => array_intersect_key($item, array_flip(['food_id', 'price_cents', 'quantity'])), $items),
+            'restaurant_id' => $restaurant?->id,
+            'delivery_fee_cents' => $restaurant?->delivery_fee_cents ?? 0,
+        ];
+
+        return ['price_quote' => hash('sha256', json_encode($pricing)), 'items' => $items, 'restaurant' => $restaurant, 'checkout_key' => $request->session()->get('checkout_key'), 'missing_items' => count($cart) !== count($items) || $foods->pluck('restaurant_id')->unique()->count() > 1, ...OrderTotal::calculate($items, $restaurant?->delivery_fee_cents ?? 0)];
     }
 
     public function clear(Request $request): void
