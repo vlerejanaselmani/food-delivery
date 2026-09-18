@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
 import {
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import { ProtectedRoute, RestaurantRoute, safeReturnTo } from "./Routing";
+import {
   MapPin,
   ChevronDown,
   ShoppingBag,
@@ -9,15 +18,21 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { api } from "./api";
-import Catalog, { RestaurantMenu } from "./Catalog";
+import Catalog from "./Catalog";
 import AuthModal from "./AuthModal";
 import CartPanel, { OrderSuccess } from "./CartPanel";
 import { Orders, Favorites } from "./AccountPages";
 import Admin from "./Admin";
 export default function App() {
-  const [page, setPage] = useState("explore"),
-    [cart, setCart] = useState({ items: [] }),
-    [cartOpen, setCartOpen] = useState(false),
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [authReady, setAuthReady] = useState(false);
+  const cartOpen = location.pathname === "/cart";
+  const auth = ["/login", "/register"].includes(location.pathname);
+  function openLogin(returnTo = location.pathname + location.search) {
+    navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+  }
+  const [cart, setCart] = useState({ items: [] }),
     [favorites, setFavorites] = useState({ foods: [], restaurants: [] }),
     [success, setSuccess] = useState(null),
     [switchItem, setSwitchItem] = useState(null),
@@ -25,8 +40,6 @@ export default function App() {
   const [restaurants, setRestaurants] = useState([]),
     [cities, setCities] = useState([]),
     [user, setUser] = useState(null),
-    [auth, setAuth] = useState(false),
-    [selected, setSelected] = useState(null),
     [query, setQuery] = useState(""),
     [city, setCity] = useState("Prishtinë"),
     [error, setError] = useState(""),
@@ -45,7 +58,7 @@ export default function App() {
   }, [user]);
   async function favorite(type, id) {
     if (!user) {
-      setAuth(true);
+      openLogin();
       return;
     }
     try {
@@ -92,16 +105,15 @@ export default function App() {
     }
   }
   function explore() {
-    setPage("explore");
-    setSelected(null);
+    navigate("/");
     window.scrollTo(0, 0);
   }
   async function signOut() {
     try {
       await api("logout", { method: "POST" });
       setUser(null);
+      navigate("/", { replace: true });
       setCart((await api("cart")).data);
-      explore();
     } catch (e) {
       setNotice(e.message);
     }
@@ -130,23 +142,58 @@ export default function App() {
       .then((r) => setUser(r.user))
       .catch((e) => {
         if (e.status !== 401) setError(e.message);
-      });
+      })
+      .finally(() => setAuthReady(true));
   }, []);
   useEffect(() => {
     if (!notice) return;
     const id = setTimeout(() => setNotice(""), 4000);
     return () => clearTimeout(id);
   }, [notice]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+  const selectRestaurant = (restaurant) =>
+    navigate(`/restaurants/${restaurant.id}`);
+  const authDestination = safeReturnTo(
+    new URLSearchParams(location.search).get("returnTo"),
+    user?.role === "admin" ? "/admin/orders" : "/",
+  );
+  const catalog = (
+    <Catalog
+      onAdd={add}
+      restaurants={restaurants}
+      query={query}
+      setQuery={setQuery}
+      onSelect={selectRestaurant}
+      onFavorite={favorite}
+      isFavorite={isFavorite}
+    />
+  );
+  const admin = (tab) => (
+    <Admin
+      tab={tab}
+      onTabChange={(next) =>
+        navigate(next === "menus" ? "/admin/menus" : "/admin/orders")
+      }
+      onBack={explore}
+      onCatalogChange={() =>
+        api("restaurants")
+          .then((r) => setRestaurants(r.data))
+          .catch((e) => setNotice(e.message))
+      }
+    />
+  );
   return (
     <>
       <header className="site-header">
         <div className="header-inner">
-          <button className="brand" onClick={explore}>
+          <Link className="brand" to="/">
             <span className="brand-icon">
               <UtensilsCrossed size={22} />
             </span>
             shija<span className="brand-dot">.</span>
-          </button>
+          </Link>
           <div className="header-divider" />
           <label className="location">
             <MapPin size={21} />
@@ -165,30 +212,19 @@ export default function App() {
             <ChevronDown size={14} />
           </label>
           <nav>
-            <button className="nav-link" onClick={explore}>
+            <Link className="nav-link" to="/">
               Explore
-            </button>
-            <button
-              className="nav-link"
-              onClick={() =>
-                user ? (setPage("favorites"), setSelected(null)) : setAuth(true)
-              }
-            >
+            </Link>
+            <Link className="nav-link" to="/favorites">
               <Heart size={18} />
               <span>Favorites</span>
-            </button>
+            </Link>
             {user ? (
               <>
-                <button
-                  className="nav-link"
-                  onClick={() => {
-                    setPage("orders");
-                    setSelected(null);
-                  }}
-                >
+                <Link className="nav-link" to="/orders">
                   <UserRound size={17} />
                   My orders
-                </button>
+                </Link>
                 <button
                   className="icon"
                   aria-label="Sign out"
@@ -198,26 +234,20 @@ export default function App() {
                 </button>
               </>
             ) : (
-              <button className="login-button" onClick={() => setAuth(true)}>
+              <button className="login-button" onClick={() => openLogin()}>
                 <UserRound size={17} />
                 Sign in
               </button>
             )}
             {user?.role === "admin" && (
-              <button
-                className="nav-link admin-nav"
-                onClick={() => {
-                  setPage("admin");
-                  setSelected(null);
-                }}
-              >
+              <Link className="nav-link admin-nav" to="/admin">
                 Admin
-              </button>
+              </Link>
             )}
             <button
               aria-label={`Cart, ${cart.items.reduce((n, i) => n + i.quantity, 0)} items`}
               className="cart-button"
-              onClick={() => setCartOpen(true)}
+              onClick={() => navigate("/cart")}
             >
               <ShoppingBag size={18} />
               <span>Cart</span>
@@ -227,19 +257,13 @@ export default function App() {
         </div>
       </header>
       <div className="mobile-nav">
-        <button onClick={explore}>Explore</button>
-        <button onClick={() => (user ? setPage("favorites") : setAuth(true))}>
-          Favorites
-        </button>
-        <button onClick={() => (user ? setPage("orders") : setAuth(true))}>
-          My orders
-        </button>
-        {user?.role === "admin" && (
-          <button onClick={() => setPage("admin")}>Admin</button>
-        )}
+        <Link to="/">Explore</Link>
+        <Link to="/favorites">Favorites</Link>
+        <Link to="/orders">My orders</Link>
+        {user?.role === "admin" && <Link to="/admin">Admin</Link>}
       </div>
       <main className="container">
-        {loading ? (
+        {loading || !authReady ? (
           <div className="empty loading">Setting the table…</div>
         ) : error ? (
           <div className="empty">
@@ -249,53 +273,93 @@ export default function App() {
               Try again
             </button>
           </div>
-        ) : page === "admin" && user?.role === "admin" ? (
-          <Admin
-            onBack={explore}
-            onCatalogChange={() =>
-              api("restaurants")
-                .then((r) => {
-                  setRestaurants(r.data);
-                  setSelected(null);
-                })
-                .catch((e) => setNotice(e.message))
-            }
-          />
-        ) : page === "orders" && user ? (
-          <Orders onBack={explore} />
-        ) : page === "favorites" && user ? (
-          <Favorites
-            favorites={favorites}
-            restaurants={restaurants}
-            onSelect={(r) => {
-              setSelected(r);
-              setPage("explore");
-            }}
-            onAdd={add}
-            onFavorite={favorite}
-            onBack={explore}
-          />
-        ) : selected ? (
-          <RestaurantMenu
-            restaurant={selected}
-            onBack={() => setSelected(null)}
-            onAdd={add}
-            onFavorite={favorite}
-            isFavorite={isFavorite}
-          />
         ) : (
-          <Catalog
-            onAdd={add}
-            restaurants={restaurants}
-            query={query}
-            setQuery={setQuery}
-            onSelect={(r) => {
-              setSelected(r);
-              window.scrollTo(0, 0);
-            }}
-            onFavorite={favorite}
-            isFavorite={isFavorite}
-          />
+          <Routes>
+            <Route path="/" element={catalog} />
+            <Route
+              path="/restaurants/:restaurantId"
+              element={
+                <RestaurantRoute
+                  restaurants={restaurants}
+                  onBack={explore}
+                  onAdd={add}
+                  onFavorite={favorite}
+                  isFavorite={isFavorite}
+                />
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute user={user}>
+                  <Orders onBack={explore} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/favorites"
+              element={
+                <ProtectedRoute user={user}>
+                  <Favorites
+                    favorites={favorites}
+                    restaurants={restaurants}
+                    onSelect={selectRestaurant}
+                    onAdd={add}
+                    onFavorite={favorite}
+                    onBack={explore}
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute user={user} adminOnly>
+                  <Navigate to="/admin/orders" replace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/orders"
+              element={
+                <ProtectedRoute user={user} adminOnly>
+                  {admin("orders")}
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/menus"
+              element={
+                <ProtectedRoute user={user} adminOnly>
+                  {admin("menus")}
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                user ? <Navigate to={authDestination} replace /> : catalog
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                user ? <Navigate to={authDestination} replace /> : catalog
+              }
+            />
+            <Route path="/cart" element={catalog} />
+            <Route
+              path="*"
+              element={
+                <div className="empty">
+                  <h2>Page not found</h2>
+                  <Link className="primary" to="/">
+                    Browse restaurants
+                  </Link>
+                </div>
+              }
+            />
+          </Routes>
         )}
       </main>
       <footer className="footer">
@@ -312,37 +376,47 @@ export default function App() {
           <span>Fresh food. Local love.</span>
         </div>
       </footer>
-      {auth && (
+      {auth && !user && authReady && !loading && (
         <AuthModal
           cities={cities}
-          onClose={() => setAuth(false)}
+          register={location.pathname === "/register"}
+          onModeChange={(register) =>
+            navigate(`${register ? "/register" : "/login"}${location.search}`, {
+              replace: true,
+            })
+          }
+          onClose={explore}
           onSuccess={(u) => {
             setUser(u);
             setCity(u.city || city);
-            setAuth(false);
-            if (u.role === "admin") {
-              setPage("admin");
-              setSelected(null);
-            }
+            const returnTo = new URLSearchParams(location.search).get(
+              "returnTo",
+            );
+            navigate(
+              safeReturnTo(
+                returnTo,
+                u.role === "admin" ? "/admin/orders" : "/",
+              ),
+              { replace: true },
+            );
             setNotice(`Welcome, ${u.name}!`);
           }}
         />
       )}
-      {cartOpen && (
+      {cartOpen && authReady && !loading && (
         <CartPanel
           cart={cart}
           setCart={setCart}
           user={user}
           cities={cities}
           city={city}
-          onClose={() => setCartOpen(false)}
+          onClose={explore}
           onSignIn={() => {
-            setCartOpen(false);
-            setAuth(true);
+            openLogin("/cart");
           }}
           onOrder={(o) => {
             setSuccess(o);
-            setCartOpen(false);
+            navigate("/", { replace: true });
           }}
         />
       )}
@@ -353,8 +427,7 @@ export default function App() {
           onClose={() => setSuccess(null)}
           onHistory={() => {
             setSuccess(null);
-            setPage("orders");
-            setSelected(null);
+            navigate("/orders");
           }}
         />
       )}
