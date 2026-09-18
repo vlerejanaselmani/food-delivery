@@ -1,0 +1,74 @@
+[
+  {
+    "name": "Margherita",
+    "url": "/images/margherita.jpg"
+  },
+  {
+    "name": "Diavola",
+    "url": "/images/diavola.jpg"
+  },
+  {
+    "name": "Creamy Carbonara",
+    "url": "/images/carbonara.jpg"
+  },
+  {
+    "name": "Pesto Primavera",
+    "url": "/images/pesto-primavera.jpg"
+  },
+  {
+    "name": "Burrata Salad",
+    "url": "/images/burrata-salad.jpg"
+  },
+  {
+    "name": "Tiramisu",
+    "url": "/images/tiramisu.jpg"
+  },
+  {
+    "name": "The Classic Smash",
+    "url": "/images/classic-smash.jpg"
+  },
+  {
+    "name": "Smoky BBQ Burger",
+    "url": "/images/smoky-bbq-burger.jpg"
+  },
+  {
+    "name": "Crispy Chicken",
+    "url": "/images/crispy-chicken-burger.jpg"
+  },
+  {
+    "name": "Garden Burger",
+    "url": "/images/garden-burger.jpg"
+  },
+  {
+    "name": "Loaded Fries",
+    "url": "/images/loaded-fries.jpg"
+  },
+  {
+    "name": "Chocolate Brownie",
+    "url": "/images/chocolate-brownie.jpg"
+  },
+  {
+    "name": "Chicken Döner",
+    "url": "/images/chicken-doner.jpg"
+  },
+  {
+    "name": "Beef Döner",
+    "url": "/images/beef-doner.jpg"
+  },
+  {
+    "name": "Mixed Grill Plate",
+    "url": "/images/mixed-grill.jpg"
+  },
+  {
+    "name": "Falafel Wrap",
+    "url": "/images/falafel-wrap.jpg"
+  },
+  {
+    "name": "Hummus & Pita",
+    "url": "/images/hummus-pita.jpg"
+  },
+  {
+    "name": "Baklava",
+    "url": "/images/baklava.jpg"
+  }
+]

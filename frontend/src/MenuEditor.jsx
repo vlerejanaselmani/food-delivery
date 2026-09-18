@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import foodPhotos from "./foodPhotos.json";
 import { api } from "./api";
 
 export default function MenuEditor({ edit, restaurants, onClose, onSaved }) {
@@ -7,6 +8,9 @@ export default function MenuEditor({ edit, restaurants, onClose, onSaved }) {
   const restaurant = type === "restaurants";
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(
+    item.image_url || "/images/pizza.jpg",
+  );
   const [photo, setPhoto] = useState(null);
   const [preview, setPreview] = useState("");
   useEffect(() => {
@@ -146,7 +150,8 @@ export default function MenuEditor({ edit, restaurants, onClose, onSaved }) {
             Image
             <select
               name="image_url"
-              defaultValue={item.image_url || "/images/pizza.jpg"}
+              value={selectedImage}
+              onChange={(event) => setSelectedImage(event.target.value)}
             >
               {[
                 "pizza",
@@ -164,9 +169,16 @@ export default function MenuEditor({ edit, restaurants, onClose, onSaved }) {
                   {i[0].toUpperCase() + i.slice(1)}
                 </option>
               ))}
-              {item.image_url && !item.image_url.startsWith("/images/") && (
-                <option value={item.image_url}>Current image</option>
-              )}
+              {!restaurant &&
+                foodPhotos.map((photo) => (
+                  <option key={photo.url} value={photo.url}>
+                    {photo.name}
+                  </option>
+                ))}
+              {item.image_url &&
+                !foodPhotos.some((photo) => photo.url === item.image_url) && (
+                  <option value={item.image_url}>Current image</option>
+                )}
             </select>
           </label>
           {!restaurant && (
@@ -194,10 +206,10 @@ export default function MenuEditor({ edit, restaurants, onClose, onSaved }) {
                 JPEG, PNG, or WebP · up to 5 MB. Uploading replaces the selected
                 image when saved.
               </p>
-              {(preview || item.image_url) && (
+              {(preview || selectedImage) && (
                 <img
                   className="upload-preview"
-                  src={preview || item.image_url}
+                  src={preview || selectedImage}
                   alt="Food photo preview"
                 />
               )}
