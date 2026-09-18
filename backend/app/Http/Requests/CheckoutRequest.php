@@ -20,6 +20,6 @@ class CheckoutRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['customer_name' => ['required', 'string', 'max:100'], 'city' => ['required', Rule::in(config('delivery.cities'))], 'phone' => ['required', 'regex:/^\+383[0-9]{8,9}$/'], 'notes' => ['nullable', 'string', 'max:500'], 'checkout_key' => ['required', 'uuid']];
+        return ['customer_name' => ['required', 'string', 'max:100'], 'city' => ['required', Rule::in(config('delivery.cities'))], 'phone' => ['required', 'regex:/^\+383[0-9]{8,9}$/'], 'notes' => ['nullable', 'string', 'max:500'], 'checkout_key' => ['required', 'uuid'], 'price_quote' => ['required', 'string', 'size:64']];
     }
 }

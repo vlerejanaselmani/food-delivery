@@ -22,6 +22,9 @@ export async function api(path, options = {}) {
         ? JSON.stringify(options.body)
         : undefined,
   });
+  if ([401, 419].includes(response.status)) {
+    window.dispatchEvent(new Event("shija:session-expired"));
+  }
   const data = response.status === 204 ? {} : await response.json();
   if (!response.ok) {
     const error = new Error(
@@ -30,6 +33,8 @@ export async function api(path, options = {}) {
         "Something went wrong. Please try again.",
     );
     error.status = response.status;
+    error.code = data.code;
+    error.data = data.data;
     throw error;
   }
   return data;

@@ -22,7 +22,8 @@ export default function CartPanel({
 }) {
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
-    [checkout, setCheckout] = useState(false);
+    [checkout, setCheckout] = useState(false),
+    [priceChanged, setPriceChanged] = useState(false);
   async function change(path, method, body) {
     setBusy(true);
     setError("");
@@ -45,12 +46,25 @@ export default function CartPanel({
         body: {
           ...Object.fromEntries(new FormData(e.target)),
           checkout_key: cart.checkout_key,
+          price_quote: cart.price_quote,
         },
       });
-      const next = await api("cart");
-      setCart(next.data);
+      setCart({
+        items: [],
+        subtotal_cents: 0,
+        delivery_fee_cents: 0,
+        total_cents: 0,
+      });
       onOrder(r.data);
+      // The order is already saved; refreshing the bag must not undo confirmation.
+      api("cart")
+        .then((next) => setCart(next.data))
+        .catch(() => {});
     } catch (e) {
+      if (e.code === "cart_price_changed" && e.data) {
+        setCart(e.data);
+        setPriceChanged(true);
+      }
       setError(e.message);
     } finally {
       setBusy(false);
@@ -243,7 +257,11 @@ export default function CartPanel({
                     cart.items.some((i) => !i.is_available)
                   }
                 >
-                  {busy ? "Placing your order…" : "Place order"}
+                  {busy
+                    ? "Placing your order…"
+                    : priceChanged
+                      ? "Confirm updated total"
+                      : "Place order"}
                   <ArrowRight size={17} />
                 </button>
               </form>

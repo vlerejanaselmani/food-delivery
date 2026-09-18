@@ -210,3 +210,42 @@ test("signed-in users skip login and signing out removes protected access", asyn
   ).toBeInTheDocument();
   expect(window.location.pathname).toBe("/login");
 });
+
+test.each(["/orders", "/admin/orders"])(
+  "expired sessions on %s clear signed-in controls and prompt login",
+  async (path) => {
+    mockApi({ ...customer, role: "admin" });
+    open(path);
+    await screen.findByRole("button", { name: "Sign out" });
+    await act(async () =>
+      window.dispatchEvent(new Event("shija:session-expired")),
+    );
+    await screen.findByRole("heading", { name: "Welcome back." });
+    expect(window.location.pathname).toBe("/login");
+    expect(new URLSearchParams(window.location.search).get("returnTo")).toBe(
+      path,
+    );
+    expect(
+      screen.queryByRole("button", { name: "Sign out" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Admin", exact: true }),
+    ).not.toBeInTheDocument();
+  },
+);
+
+test("expired sessions allow guest browsing and ask for login when opening favorites", async () => {
+  mockApi(customer);
+  open("/");
+  await screen.findByRole("button", { name: "Sign out" });
+  await act(async () =>
+    window.dispatchEvent(new Event("shija:session-expired")),
+  );
+  expect(window.location.pathname).toBe("/");
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Sign in", exact: true }),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getAllByRole("link", { name: "Favorites" })[0]);
+  await screen.findByRole("heading", { name: "Welcome back." });
+});
