@@ -1,0 +1,24 @@
+{
+  "generator": "OpenAI built-in image_gen",
+  "shared_prompt": "Photorealistic food menu product photo; landscape 4:3, single dish centered fully visible with generous margin, warm natural light, neutral cream tabletop, realistic texture, no text, watermark, people or collage.",
+  "items": {
+    "margherita.jpg": "Margherita pizza: San Marzano tomato sauce, fresh mozzarella, fresh basil and olive oil. No meat.",
+    "diavola.jpg": "Diavola pizza: tomato sauce, mozzarella and visible spicy salami slices.",
+    "carbonara.jpg": "Creamy carbonara: spaghetti, small smoked beef pieces, glossy egg yolk and Parmesan sauce.",
+    "pesto-primavera.jpg": "Pesto Primavera: penne pasta coated in green basil pesto, cherry tomatoes and shaved Parmesan.",
+    "burrata-salad.jpg": "Burrata salad: a creamy white burrata ball on seasonal tomatoes and rocket, balsamic drizzle.",
+    "tiramisu.jpg": "Tiramisu: a square slice showing espresso-soaked sponge and mascarpone layers with cocoa dusting.",
+    "classic-smash.jpg": "Classic smash burger: two thin smashed beef patties, melted cheddar, pickles, house sauce in a bun.",
+    "smoky-bbq-burger.jpg": "Smoky BBQ burger: grilled beef patty, smoked cheese, crispy onion rings and barbecue sauce in a bun.",
+    "crispy-chicken-burger.jpg": "Crispy chicken burger: golden crispy breaded chicken breast, crunchy slaw and garlic mayo in a bun.",
+    "garden-burger.jpg": "Garden burger: visibly chickpea vegetarian patty, avocado slices, lettuce and herby yogurt in a bun.",
+    "loaded-fries.jpg": "Loaded fries: golden French fries covered in melted cheddar and creamy house sauce.",
+    "chocolate-brownie.jpg": "Chocolate brownie: square fudgy rich dark chocolate brownie with a cracked top and moist center. No cake frosting.",
+    "chicken-doner.jpg": "Chicken doner wrap: sliced spiced chicken, salad and garlic sauce in warm flatbread, cut open to show filling.",
+    "beef-doner.jpg": "Beef doner wrap: shaved roasted beef, red cabbage, tomatoes and creamy house sauce in flatbread, cut open to show filling.",
+    "mixed-grill.jpg": "Mixed grill plate: chicken kebab and beef kebab, rice, grilled peppers and tomatoes, warm flatbread.",
+    "falafel-wrap.jpg": "Falafel wrap: crispy chickpea falafel balls, hummus, salad and tahini in a wrap cut open to show filling. No meat.",
+    "hummus-pita.jpg": "Hummus and pita: bowl of smooth hummus with olive oil and paprika, surrounded by warm pita wedges.",
+    "baklava.jpg": "Pistachio baklava: pieces of golden flaky filo pastry with green pistachio filling and honey syrup. No cake."
+  }
+}

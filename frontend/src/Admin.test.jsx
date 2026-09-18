@@ -177,3 +177,37 @@ test("keeps the create admin form open when the server rejects the email", async
   fireEvent.click(screen.getByRole("button", { name: "Close create admin" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
+
+test("editing a dish retains its specific photo and previews another selection", async () => {
+  const updated = {
+    ...restaurant,
+    foods: [{ ...restaurant.foods[0], image_url: "/images/margherita.jpg" }],
+  };
+  api.mockImplementation(async (path) =>
+    path === "admin/restaurants"
+      ? { data: [updated] }
+      : { data: [], meta: { last_page: 1 } },
+  );
+  render(<Admin onBack={vi.fn()} onCatalogChange={vi.fn()} />);
+  fireEvent.click(screen.getByRole("button", { name: "Restaurants & menus" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Edit Margherita" }),
+  );
+  expect(screen.getByLabelText("Image")).toHaveValue("/images/margherita.jpg");
+  fireEvent.change(screen.getByLabelText("Image"), {
+    target: { value: "/images/diavola.jpg" },
+  });
+  expect(screen.getByAltText("Food photo preview")).toHaveAttribute(
+    "src",
+    "/images/diavola.jpg",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  await waitFor(() =>
+    expect(api).toHaveBeenCalledWith(
+      "admin/foods/1",
+      expect.objectContaining({
+        body: expect.objectContaining({ image_url: "/images/diavola.jpg" }),
+      }),
+    ),
+  );
+});
