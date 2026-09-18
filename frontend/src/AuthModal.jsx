@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { X, ArrowRight, UtensilsCrossed } from "lucide-react";
 import { api } from "./api";
-export default function AuthModal({ cities, onClose, onSuccess }) {
-  const [register, setRegister] = useState(false),
-    [error, setError] = useState(""),
+export default function AuthModal({
+  cities,
+  onClose,
+  onSuccess,
+  register = false,
+  onModeChange,
+}) {
+  const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   async function submit(e) {
     e.preventDefault();
@@ -106,7 +111,7 @@ export default function AuthModal({ cities, onClose, onSuccess }) {
           <button
             className="text-button"
             onClick={() => {
-              setRegister(!register);
+              onModeChange(!register);
               setError("");
             }}
           >

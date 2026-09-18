@@ -13,10 +13,15 @@ import CreateAdmin from "./CreateAdmin";
 import { api } from "./api";
 import { money } from "./Catalog";
 import { OrderCard } from "./AccountPages";
-export default function Admin({ onBack, onCatalogChange }) {
+export default function Admin({
+  onBack,
+  onCatalogChange,
+  tab: routeTab,
+  onTabChange,
+}) {
   const [creatingAdmin, setCreatingAdmin] = useState(false);
   const [notice, setNotice] = useState("");
-  const [tab, setTab] = useState("orders"),
+  const [localTab, setLocalTab] = useState("orders"),
     [restaurants, setRestaurants] = useState([]),
     [orders, setOrders] = useState([]),
     [filter, setFilter] = useState(""),
@@ -27,6 +32,8 @@ export default function Admin({ onBack, onCatalogChange }) {
     [edit, setEdit] = useState(null),
     [remove, setRemove] = useState(null),
     [busy, setBusy] = useState(false);
+  const tab = routeTab ?? localTab;
+  const setTab = onTabChange ?? setLocalTab;
   async function load(p = page) {
     setLoading(true);
     setError("");

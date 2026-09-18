@@ -42,3 +42,10 @@ Route::prefix('api/v1')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
     });
 });
+
+Route::get('/{path}', function () {
+    $index = public_path('index.html');
+    abort_unless(is_file($index), 404);
+
+    return response()->file($index, ['Cache-Control' => 'no-cache']);
+})->where('path', '(?!(?:api|sanctum|storage|assets|images|up)(?:/|$)).*')->name('spa');
